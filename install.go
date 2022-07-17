@@ -13,6 +13,7 @@ import (
 	alpm "github.com/Jguer/go-alpm/v2"
 	gosrc "github.com/Morganamilo/go-srcinfo"
 	"github.com/leonelquinteros/gotext"
+	"gopkg.in/ini.v1"
 
 	"github.com/Jguer/yay/v11/pkg/completion"
 	"github.com/Jguer/yay/v11/pkg/db"
@@ -845,4 +846,31 @@ func doAddTarget(dp *dep.Pool, localNamesCache, remoteNamesCache stringset.Strin
 	}
 
 	return deps, exp, nil
+}
+
+func installFromConfig(ctx context.Context, cmdArgs *parser.Arguments, dbExecutor db.Executor, ignoreProviders bool) error {
+	requestTargets := cmdArgs.Copy().Targets
+	newCmdArgs := cmdArgs.Copy()
+	newCmdArgs.DelArg("f", "file")
+	newCmdArgs.Op = "S"
+	newCmdArgs.ClearTargets()
+	for _, requestTarget := range requestTargets {
+		cfg, err := ini.Load(requestTarget)
+		if err != nil {
+			return err
+		}
+		for _, section := range cfg.Sections() {
+			packageName := section.Name()
+			version := section.Key("version").String()
+			repository := section.Key("repository").String()
+			if repository != "" {
+				packageName = repository + packageName
+			} 
+			if version != "" {
+				packageName += version
+			} 
+			newCmdArgs.AddTarget(packageName)
+		}
+	}
+	return install(ctx, newCmdArgs, dbExecutor, ignoreProviders)
 }

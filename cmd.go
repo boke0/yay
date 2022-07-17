@@ -350,6 +350,8 @@ func handleSync(ctx context.Context, cmdArgs *parser.Arguments, dbExecutor db.Ex
 	case cmdArgs.ExistsArg("y", "refresh"):
 		return config.Runtime.CmdBuilder.Show(config.Runtime.CmdBuilder.BuildPacmanCmd(ctx,
 			cmdArgs, config.Runtime.Mode, settings.NoConfirm))
+	case cmdArgs.ExistsArg("f", "file"):
+		return installFromConfig(ctx, cmdArgs, dbExecutor, false)
 	}
 
 	return nil
